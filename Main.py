@@ -1,8 +1,6 @@
-import plotly.plotly as py
-import plotly.graph_objs as go
 import csv
-
-py.sign_in('stanislavL', '232232Py')
+import plotly
+from plotly.graph_objs import Scatter, Layout
 
 class User(object):
     id = 0
@@ -110,19 +108,24 @@ for user in users:
 
 timeOfTheDay = ['0 to 4', '4 to 8', '8 to 12', '12 to 16', '16 to 20', '20 to 24']
 
-line1 = go.Scatter(
-    x = timeOfTheDay,
-    y = users[0].consumptionOnOneDay,
-    mode = 'lines',
-    name = users[0].firstName
-)
-line2 = go.Scatter(
-    x = timeOfTheDay,
-    y = users[1].consumptionOnOneDay,
-    mode = 'lines',
-    name = users[1].firstName
-)
-data = [line1, line2]
+# line1 = go.Scatter(
+#     x = timeOfTheDay,
+#     y = users[0].consumptionOnOneDay,
+#     mode = 'lines',
+#     name = users[0].firstName
+# )
+# line2 = go.Scatter(
+#     x = timeOfTheDay,
+#     y = users[1].consumptionOnOneDay,
+#     mode = 'lines',
+#     name = users[1].firstName
+# )
+# data = [line1, line2]
 
 # Plot and embed in ipython notebook!
-py.iplot(data, filename='consumptionDuringOneDay')
+# py.iplot(data, filename='consumptionDuringOneDay.jpg')
+
+plotly.offline.plot({
+    "data": [Scatter(x=[1, 2, 3, 4], y=[4, 3, 2, 1])],
+    "layout": Layout(title="hello world")
+})
