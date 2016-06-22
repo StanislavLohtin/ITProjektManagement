@@ -1,6 +1,23 @@
 import csv
 import plotly
-from plotly.graph_objs import Scatter, Layout
+from plotly import __version__
+from plotly.offline import download_plotlyjs, init_notebook_mode, plot, iplot
+from plotly.graph_objs import *
+import plotly.plotly as py
+#from IPython.display import Image
+# Generate the figure
+
+plotly.tools.set_credentials_file(username='stanislavL', api_key='g4vubtu1nr')
+
+
+# from plotly.offline import download_plotlyjs, init_notebook_mode, iplot
+# from plotly.graph_objs import *
+# init_notebook_mode(connected=True)
+#
+#iplot([{"x": [1, 2, 3], "y": [3, 1, 6]}])
+
+#Image(filename='my_plot.png')
+
 
 class User(object):
     id = 0
@@ -121,11 +138,11 @@ timeOfTheDay = ['0 to 4', '4 to 8', '8 to 12', '12 to 16', '16 to 20', '20 to 24
 #     name = users[1].firstName
 # )
 # data = [line1, line2]
+for user in users:
 
-# Plot and embed in ipython notebook!
-# py.iplot(data, filename='consumptionDuringOneDay.jpg')
+    trace = Bar(x=[timeOfTheDay[0], timeOfTheDay[1], timeOfTheDay[2], timeOfTheDay[3], timeOfTheDay[4], timeOfTheDay[5]],y=[user.consumptionOnOneDay[0],user.consumptionOnOneDay[1],user.consumptionOnOneDay[2],user.consumptionOnOneDay[3],user.consumptionOnOneDay[4],user.consumptionOnOneDay[5]])
+    data = [trace]
+    layout = Layout(title='Your average consumption in one day')
+    fig = Figure(data=data,layout=layout)
 
-plotly.offline.plot({
-    "data": [Scatter(x=[1, 2, 3, 4], y=[4, 3, 2, 1])],
-    "layout": Layout(title="hello world")
-})
+    py.image.save_as(fig, user.firstName + ' ' + user.lastName + ' average per day.png')
