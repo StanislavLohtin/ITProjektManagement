@@ -2,7 +2,7 @@ import csv
 import plotly
 from plotly import __version__
 from plotly.offline import download_plotlyjs, init_notebook_mode, plot, iplot
-from plotly.graph_objs import *
+from plotly.graph_objs import * #Scatter, Bar, Figure, Layout
 import plotly.graph_objs as go
 import plotly.plotly as py
 
@@ -127,7 +127,7 @@ for user in users:
         print("average consumption from " + str(i*4) + " to " + str(i*4+4) + " : " + str(user.consumptionOnOneDay[i]))
 
 timeOfTheDay = ['0 to 4', '4 to 8', '8 to 12', '12 to 16', '16 to 20', '20 to 24']
-weekNames = ['Week 21', 'Week 22', 'Week 23', 'Now']
+weekNames = ['Week 20', 'Week 21', 'Week 22', 'Week 23', 'Now']
 
 for user in users:
     for userInAll in allUsers:
@@ -135,8 +135,24 @@ for user in users:
             for i in range(0, len(userInAll.week)):
                 user.weekConsumption.append(userInAll.week[i])
 
-for user in users:
+averageConsumptionPerWeek = []
+bestConsumptionPerWeek = []
 
+for week in range(0, 5):
+    sumPerWeek = 0
+    bestPerWeek = 0
+    weekConsumptions = []
+    for user in allUsers:
+        sumPerWeek += user.week[week]
+        if user.week[week]>0:
+            weekConsumptions.append(user.week[week])
+    averageConsumptionPerWeek.append(sumPerWeek/len(allUsers))
+    weekConsumptions = sorted(weekConsumptions)
+    for i in range(0, 10):
+        bestPerWeek += weekConsumptions[i]
+    bestConsumptionPerWeek.append(bestPerWeek/10)
+
+for user in users:
     trace = Bar(x=[timeOfTheDay[0], timeOfTheDay[1], timeOfTheDay[2], timeOfTheDay[3], timeOfTheDay[4],
                    timeOfTheDay[5]], y=[user.consumptionOnOneDay[0], user.consumptionOnOneDay[1],
                                         user.consumptionOnOneDay[2], user.consumptionOnOneDay[3],
@@ -147,9 +163,28 @@ for user in users:
 
     py.image.save_as(fig, user.firstName + ' ' + user.lastName + ' average in a day.png')
 
-    trace = Bar(x=[weekNames[0], weekNames[1], weekNames[2], weekNames[3]], y=[user.weekConsumption[0], user.weekConsumption[1],
-                                        user.weekConsumption[2], user.weekConsumption[3]])
-    data = [trace]
+    userGraph = go.Scatter(
+        x=weekNames,
+        y=user.weekConsumption,
+        mode='lines+markers',
+        name='You'
+    )
+
+    averageGraph = go.Scatter(
+        x=weekNames,
+        y=averageConsumptionPerWeek,
+        mode='lines+markers',
+        name='Average'
+    )
+
+    bestGraph = go.Scatter(
+        x=weekNames,
+        y=bestConsumptionPerWeek,
+        mode='lines+markers',
+        name='Best 10%'
+    )
+
+    data = [userGraph, averageGraph, bestGraph]
     layout = Layout(title='Comparison in week in energy consumption')
     fig = Figure(data=data, layout=layout)
 
