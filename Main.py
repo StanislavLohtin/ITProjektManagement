@@ -5,6 +5,10 @@ from plotly.offline import download_plotlyjs, init_notebook_mode, plot, iplot
 from plotly.graph_objs import * #Scatter, Bar, Figure, Layout
 import plotly.graph_objs as go
 import plotly.plotly as py
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.image import MIMEImage
+import smtplib
 
 plotly.tools.set_credentials_file(username='stanislavL', api_key='g4vubtu1nr')
 
@@ -23,6 +27,8 @@ class User(object):
         self.days = []
         self.week = []
         self.weekConsumption = []
+
+#############################################   TABLES READING PART   #################################################
 
 with open('resources/csv/customer_data.csv') as csvFile:
     userReader = csv.reader(csvFile, delimiter=' ', quotechar='|')
@@ -85,6 +91,8 @@ with open('resources/csv/smd_week5.csv') as csvFile:
 
 allUsers = []
 
+#############################################   DATA SAVING INTO OBJECTS PART  #################################################
+
 for row in rowsFromFile:
     columns = []
     [columns.append(x) for x in row.split(';')]
@@ -122,7 +130,7 @@ for user in users:
         print("week: " + str(i+1) + " - " + str(user.week[i]))
     for i in range(28, 35):
         for t in range(0, len(user.days[i])):
-            user.consumptionOnOneDay[t // 8] += float(user.days[i][t].replace(',', '.'))
+            user.consumptionOnOneDay[t // 8] += float(user.days[i][t].replace(',', '.')) * 0.15
     for i in range(0, 6):
         print("average consumption from " + str(i*4) + " to " + str(i*4+4) + " : " + str(user.consumptionOnOneDay[i]))
 
@@ -133,7 +141,9 @@ for user in users:
     for userInAll in allUsers:
         if user.id in userInAll.id:
             for i in range(0, len(userInAll.week)):
-                user.weekConsumption.append(userInAll.week[i])
+                user.weekConsumption.append(float(userInAll.week[i]) * 0.15)
+
+#############################################   CALCULATION PART   #################################################
 
 averageConsumptionPerWeek = []
 bestConsumptionPerWeek = []
@@ -146,46 +156,167 @@ for week in range(0, 5):
         sumPerWeek += user.week[week]
         if user.week[week]>0:
             weekConsumptions.append(user.week[week])
-    averageConsumptionPerWeek.append(sumPerWeek/len(allUsers))
+    averageConsumptionPerWeek.append(sumPerWeek/len(allUsers) * 0.15)
     weekConsumptions = sorted(weekConsumptions)
     for i in range(0, 10):
         bestPerWeek += weekConsumptions[i]
-    bestConsumptionPerWeek.append(bestPerWeek/10)
+    bestConsumptionPerWeek.append(bestPerWeek/10 * 0.15)
 
-for user in users:
-    trace = Bar(x=[timeOfTheDay[0], timeOfTheDay[1], timeOfTheDay[2], timeOfTheDay[3], timeOfTheDay[4],
-                   timeOfTheDay[5]], y=[user.consumptionOnOneDay[0], user.consumptionOnOneDay[1],
-                                        user.consumptionOnOneDay[2], user.consumptionOnOneDay[3],
-                                        user.consumptionOnOneDay[4], user.consumptionOnOneDay[5]])
-    data = [trace]
-    layout = Layout(title='Your average consumption in one day this week')
-    fig = Figure(data=data, layout=layout)
+#############################################   GRAPH DRAWING PART   #################################################
 
-    py.image.save_as(fig, user.firstName + ' ' + user.lastName + ' average in a day.png')
+# for user in users:
+#     trace = Bar(x=[timeOfTheDay[0], timeOfTheDay[1], timeOfTheDay[2], timeOfTheDay[3], timeOfTheDay[4],
+#                    timeOfTheDay[5]], y=[user.consumptionOnOneDay[0], user.consumptionOnOneDay[1],
+#                                         user.consumptionOnOneDay[2], user.consumptionOnOneDay[3],
+#                                         user.consumptionOnOneDay[4], user.consumptionOnOneDay[5]])
+#     data = [trace]
+#     layout = Layout(title='Energy consumption')
+#     fig = Figure(data=data, layout=layout)
+#
+#     py.image.save_as(fig, 'resources/img/' + user.firstName + ' ' + user.lastName + ' average in a day.png')
+#
+#     userGraph = go.Scatter(
+#         x=weekNames,
+#         y=user.weekConsumption,
+#         mode='lines+markers',
+#         name='You'
+#     )
+#
+#     averageGraph = go.Scatter(
+#         x=weekNames,
+#         y=averageConsumptionPerWeek,
+#         mode='lines+markers',
+#         name='Average'
+#     )
+#
+#     bestGraph = go.Scatter(
+#         x=weekNames,
+#         y=bestConsumptionPerWeek,
+#         mode='lines+markers',
+#         name='Best 10%'
+#     )
+#
+#     data = [userGraph, averageGraph, bestGraph]
+#     layout = Layout(title='Comparison in week in energy consumption')
+#     fig = Figure(data=data, layout=layout)
+#
+#     py.image.save_as(fig, 'resources/img/' + user.firstName + ' ' + user.lastName + ' average per week.png')
 
-    userGraph = go.Scatter(
-        x=weekNames,
-        y=user.weekConsumption,
-        mode='lines+markers',
-        name='You'
-    )
+#############################################   EMAIL GENERATING PART  #################################################
 
-    averageGraph = go.Scatter(
-        x=weekNames,
-        y=averageConsumptionPerWeek,
-        mode='lines+markers',
-        name='Average'
-    )
 
-    bestGraph = go.Scatter(
-        x=weekNames,
-        y=bestConsumptionPerWeek,
-        mode='lines+markers',
-        name='Best 10%'
-    )
+msg = MIMEMultipart()
+msg["To"] = 'st.lokhtin@gmail.com'
+msg["From"] = 'diffiller@gmail.com'
+msg["Subject"] = 'ProjektManagement Testing'
 
-    data = [userGraph, averageGraph, bestGraph]
-    layout = Layout(title='Comparison in week in energy consumption')
-    fig = Figure(data=data, layout=layout)
+user1 = users[0]
 
-    py.image.save_as(fig, user.firstName + ' ' + user.lastName + ' average per week.png')
+html = """\
+<html>
+  <head></head>
+  <body>
+<div style="font-size: 150%">
+    <div style="float: right;">
+         <img src="cid:regnitzLogo" style="height: 120px">
+    </div>
+    <div style="padding: 15px; border: 1px solid black; width: 200px; float: left">
+        <b> """ + user1.firstName + ' ' + user1.lastName + """</b>
+        <div> Customer ID: """ + user1.id + """</div>
+    </div>
+
+
+    <div style="margin-top: 130px; padding: 10px; border: 1px solid black; width: 100%">
+        <div> Dear Customer,</div>
+        <div> please find your consumption report for week 24</div>
+    </div>
+
+    <div style="margin-top: 10px; padding: 10px; border: 1px solid black; width: 100%; background-color: lightgrey">
+        <b> How does your energy consumption change over time?</b>
+    </div>
+
+    <div style="margin-top: 10px; padding-right: 10px; border: 1px solid black; width: 250px; font-size: 90%; float: left">
+        <ul>
+            <li> You spent """ + "{:.2f}".format(user1.weekConsumption[4]) + """€ this week. It is more than the week before. The rise costs you """ + "{:.2f}".format(user1.weekConsumption[4] - user1.weekConsumption[3]) + """ more euro.</li>
+            <li style="margin-top:10px"> You are still below the average. But """ + "{:.2f}".format(user1.weekConsumption[4] - bestConsumptionPerWeek[4]) + """€ separate you from the 10% of the customers that consume the less.</li>
+            <li style="margin-top:10px"> The increase since the week 20 represents """ + "{:.2f}".format(user1.weekConsumption[4] - user1.weekConsumption[0]) + """€</li>
+        </ul>
+        <div>
+            <img src="cid:rainingCloud" style="margin-left:30px; width: 50px">
+            <img src="cid:greyCloud" style="width: 50px">
+            <img src="cid:sun" style="width: 50px">
+        </div>
+    </div>
+
+    <div style="float:right; z-index:-1">
+         <img src="cid:week" style="width: 600px">
+    </div>
+
+    <div style="margin-top: 10px; padding: 10px; border: 1px solid black; width: 100%; background-color: lightgrey">
+        <b> Your average consumption in one day this week</b>
+    </div>
+
+    <div style="position: absolute; left: 0px; top: 500px; z-index: -1">
+         <img src="cid:day" style="width: 100%">
+    </div>
+
+    <div style="margin-left: 50px; padding:10px; margin-top: 300px; padding-right: 300px; border: 1px solid black; width: 400px; font-size: 90%; height: 220px">
+        <b> How can you reduce your consumption?</b>
+        <ul>
+            <li> Use energy-saving light bulbs</li>
+            <li> Be careful about the standby of your electric devices</li>
+            <li> Take shower rather than take a bath. This way you will consume on average 70% less hot water.</li>
+        </ul>
+        <div style="float:right">
+            <img src="cid:lightBulb" style="height: 200px">
+        </div>
+    </div>
+
+    <div style="margin-top: 20px; margin-left: 170px; font-size: 80%">
+        <em> Report realized in collaboration with People are Power</em>
+    </div>
+
+    <div style="margin-top: 2px; margin-left: 310px">
+        <img src="cid:pap" style="height: 90px">
+    </div>
+
+    <div style="margin-top: 0px; margin-left: 110px; font-size: 65%">
+        <em> If you wish to stop receiving our emails or change your subscription options, please <a href="http://www.google.de">click here</a>.</em>
+    </div>
+
+</div>
+</body>
+</html>
+"""
+
+
+def addImage (fileName, imageID):
+    fp = open(fileName, 'rb')
+    img = MIMEImage(fp.read())
+    fp.close()
+    img.add_header('Content-ID', imageID)
+    msg.attach(img)
+
+addImage('resources/img/regnitzLogo.png', '<regnitzLogo>')
+addImage('resources/img/rainingCloud.png', '<rainingCloud>')
+addImage('resources/img/greyCloud.png', '<greyCloud>')
+addImage('resources/img/sun.png', '<sun>')
+addImage('resources/img/Konstantin Hopf average per week.png', '<week>')
+addImage('resources/img/Konstantin Hopf average in a day.png', '<day>')
+addImage('resources/img/lightBulb.jpg', '<lightBulb>')
+addImage('resources/img/PAPLogo.png', '<pap>')
+
+#msgText = MIMEText('<b>%s</b><br><img src="cid:%s"><br>' % (body, attachment), 'html')
+#msg.attach(msgText)   # Added, and edited the previous line
+
+#part1 = MIMEText(body, 'plain')
+part2 = MIMEText(html, 'html')
+
+#msg.attach(part1)
+msg.attach(part2)
+
+server = smtplib.SMTP('smtp.gmail.com:587')
+server.starttls()
+server.login("diffiller@gmail.com","zzz")
+server.sendmail(msg["From"], [msg["To"]], msg.as_string())
+server.quit()
