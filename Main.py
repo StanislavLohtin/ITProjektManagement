@@ -11,8 +11,7 @@ from email.mime.image import MIMEImage
 import smtplib
 import random
 
-plotly.tools.set_credentials_file(username='stanislavL', api_key='g4vubtu1nr')
-
+# Use this for plotly further features plotly.tools.set_credentials_file(username='stanislavL', api_key='g4vubtu1nr')
 
 class User(object):
     id = 0
@@ -126,13 +125,9 @@ for user in users:
     print('name: ' + user.firstName + ' ' + user.lastName)
     print('email: ' + user.email)
     user.consumptionOnOneDay = [0, 0, 0, 0, 0, 0]
-    # for i in range(0, 5):
-    #     print("week: " + str(i+1) + " - " + str(user.week[i]))
     for i in range(28, 35):
         for t in range(0, len(user.days[i])):
             user.consumptionOnOneDay[t // 8] += float(user.days[i][t].replace(',', '.')) * 0.15
-    # for i in range(0, 6):
-    #     print("average consumption from " + str(i*4) + " to " + str(i*4+4) + " : " + str(user.consumptionOnOneDay[i]))
 
 timeOfTheDay = ['0:00 to 4:00', '4:00 to 8:00', '8:00 to 12:00', '12:00 to 16:00', '16:00 to 20:00', '20:00 to 24:00']
 weekNames = ['Week 20', 'Week 21', 'Week 22', 'Week 23', 'Now']
@@ -205,13 +200,13 @@ for user in users:
     py.image.save_as(fig, 'resources/img/' + user.id + ' ' + user.firstName + ' ' + user.lastName + ' average per week.png')
 
 #############################################   EMAIL GENERATING PART  #################################################
+
 tips = ['What about new appliance which use less energy? E.g. smart washing machine which starts automatically (during the night).',
         'Do everything important during the day. Your light bulbs will use less energy during evenings.',
         'Use the exact amount of water that you need during the kettle heating.',
         'What about using energy-saving light bulbs?',
         'Be careful about the standby of your electric devices.',
         'Try to take shower than take a bath next time. Did you know that you will consume on average <span style="color:red">70% LESS</span> hot water?']
-
 
 user1 = users[0]
 for user in users:
@@ -237,7 +232,6 @@ for user in users:
     msg["To"] = user.email
     msg["From"] = 'info@regnitz-utilities.de'
     msg["Subject"] = 'Weekly energy consumption report'
-
 
     html = """
     <html>
@@ -387,11 +381,13 @@ for user in users:
     addImage('resources/img/yt.png', '<yt>')
     addImage('resources/img/facebook.png', '<facebook>')
 
+    #############################################   EMAIL SENDING PART  #################################################
+
     emailText = MIMEText(html, 'html')
 
     msg.attach(emailText)
 
-    #server = smtplib.SMTP('smtp.gmail.com:587')
+    # Use server = smtplib.SMTP('smtp.gmail.com:587') to connect to gmail server
     server = smtplib.SMTP('mail.uni-bamberg.de')
     server.starttls()
     server.sendmail(msg["From"], [msg["To"]], msg.as_string())
