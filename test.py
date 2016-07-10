@@ -6,7 +6,7 @@ import smtplib
 attachment = 'Anna Kupfer average per week.png'
 
 msg = MIMEMultipart()
-msg["To"] = 'fisunkate@list.ru'
+msg["To"] = ''
 msg["From"] = 'me'
 msg["Subject"] = 'ProjektManagement Testing'
 
@@ -54,6 +54,6 @@ server = smtplib.SMTP('smtp.gmail.com:587')
 #server = smtplib.SMTP('127.0.0.1')
 #server.ehlo()
 server.starttls()
-server.login("diffiller@gmail.com","zzzz")
+server.login("d@gmail.com","zzzz")
 server.sendmail(msg["From"], [msg["To"]], msg.as_string())
 server.quit()

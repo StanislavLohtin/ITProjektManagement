@@ -9,6 +9,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 import smtplib
+import random
 
 plotly.tools.set_credentials_file(username='stanislavL', api_key='g4vubtu1nr')
 
@@ -133,7 +134,7 @@ for user in users:
     # for i in range(0, 6):
     #     print("average consumption from " + str(i*4) + " to " + str(i*4+4) + " : " + str(user.consumptionOnOneDay[i]))
 
-timeOfTheDay = ['0 to 4', '4 to 8', '8 to 12', '12 to 16', '16 to 20', '20 to 24']
+timeOfTheDay = ['0:00 to 4:00', '4:00 to 8:00', '8:00 to 12:00', '12:00 to 16:00', '16:00 to 20:00', '20:00 to 24:00']
 weekNames = ['Week 20', 'Week 21', 'Week 22', 'Week 23', 'Now']
 
 for user in users:
@@ -150,12 +151,14 @@ bestConsumptionPerWeek = []
 for week in range(0, 5):
     sumPerWeek = 0
     bestPerWeek = 0
+    userCount = 0
     weekConsumptions = []
     for user in allUsers:
         sumPerWeek += user.week[week]
         if user.week[week]>0:
             weekConsumptions.append(user.week[week])
-    averageConsumptionPerWeek.append(sumPerWeek/len(allUsers) * 0.15)
+            userCount += 1
+    averageConsumptionPerWeek.append(sumPerWeek/userCount * 0.15)
     weekConsumptions = sorted(weekConsumptions)
     for i in range(0, 10):
         bestPerWeek += weekConsumptions[i]
@@ -169,10 +172,10 @@ for user in users:
                                         user.consumptionOnOneDay[2], user.consumptionOnOneDay[3],
                                         user.consumptionOnOneDay[4], user.consumptionOnOneDay[5]])
     data = [trace]
-    layout = Layout(title='Energy consumption')
+    layout = Layout(title='Energy consumption', yaxis=dict(title='€'))
     fig = Figure(data=data, layout=layout)
 
-    py.image.save_as(fig, 'resources/img/' + user.firstName + ' ' + user.lastName + ' average in a day.png')
+    py.image.save_as(fig, 'resources/img/' + user.id + ' ' + user.firstName + ' ' + user.lastName + ' average in a day.png')
 
     userGraph = go.Scatter(
         x=weekNames,
@@ -196,62 +199,116 @@ for user in users:
     )
 
     data = [userGraph, averageGraph, bestGraph]
-    layout = Layout(title='Comparison in week in energy consumption')
+    layout = Layout(title='Comparison in week in energy consumption', yaxis=dict(title='€'))
     fig = Figure(data=data, layout=layout)
 
-    py.image.save_as(fig, 'resources/img/' + user.firstName + ' ' + user.lastName + ' average per week.png')
+    py.image.save_as(fig, 'resources/img/' + user.id + ' ' + user.firstName + ' ' + user.lastName + ' average per week.png')
 
 #############################################   EMAIL GENERATING PART  #################################################
+tips = ['What about new appliance which use less energy? E.g. smart washing machine which starts automatically (during the night).',
+        'Do everything important during the day. Your light bulbs will use less energy during evenings.',
+        'Use the exact amount of water that you need during the kettle heating.',
+        'What about using energy-saving light bulbs?',
+        'Be careful about the standby of your electric devices.',
+        'Try to take shower than take a bath next time. Did you know that you will consume on average <span style="color:red">70% LESS</span> hot water?']
+
 
 user1 = users[0]
 for user in users:
-
+    randomTips = []
+    while True:
+        tip = random.choice(tips)
+        if tip not in randomTips:
+            randomTips.append(tip)
+        if len(randomTips) == 3:
+            break
+    biggestConsumption = 0
+    lowestConsumption = user.consumptionOnOneDay[0]
+    lowestConsumptionText = timeOfTheDay[0]
+    biggestConsumptionText = timeOfTheDay[4]
+    for i in range(0,6):
+        if biggestConsumption < user.consumptionOnOneDay[i]:
+            biggestConsumption = user.consumptionOnOneDay[i]
+            biggestConsumptionText = timeOfTheDay[i]
+        if lowestConsumption > user.consumptionOnOneDay[i]:
+            lowestConsumption = user.consumptionOnOneDay[i]
+            lowestConsumptionText = timeOfTheDay[i]
     msg = MIMEMultipart()
     msg["To"] = user.email
-    msg["From"] = 'info@regnitzutilities.de'
+    msg["From"] = 'info@regnitz-utilities.de'
     msg["Subject"] = 'Weekly energy consumption report'
 
 
-    html = """\
+    html = """
     <html>
       <head></head>
       <body>
     <div style="font-size: 150%">
-        <div style="float: right; margin-right: 3%">
-             <img src="cid:regnitzLogo" style="height: 120px">
+        <div style="float: right; margin-right: 8%">
+             <img src="cid:regnitzLogo" style="height: 150px">
         </div>
-        <div style="padding: 15px; border: 1px solid black; width: 200px; float: left">
+        <div style="padding: 15px; border: 1px solid black; width: 20%; float: left">
             <b> """ + user.firstName + ' ' + user.lastName + """</b>
             <div> Customer ID: """ + user.id + """</div>
         </div>
 
-        <div style="clear: both; margin-top: 30px; padding: 10px; border: 1px solid black; width: 95%">
-            <div> Dear Customer,</div>
-            <div> please find your consumption report for week 24</div>
+        <div style="clear: both; margin-top: 30px; padding: 10px; border: 1px solid black; width: 90%">
+            <div> Dear """ + user.firstName + """, </div>
+            <div> We are here with your weekly report! How was your energy consumption for this week?</div>
+            <div> Here we go!</div>
         </div>
 
-        <div style="margin-top: 10px; padding: 10px; border: 1px solid black; width: 95%; background-color: lightgrey">
+        <div style="margin-top: 10px; padding: 10px; border: 1px solid black; width: 90%; background-color: lightgrey">
             <b> How does your energy consumption change over time?</b>
         </div>
 
-        <div style="margin-top: 10px; padding-right: 10px; border: 1px solid black; width: 250px; font-size: 90%; float: left">
+        <div style="margin-top: 10px; padding: 10px; border: 1px solid black; width: 90%; font-size: 90%;">
             <ul>
-                <li> You spent """ + "{:.2f}".format(user.weekConsumption[4]) + """€ this week. It is more than the week before. The rise costs you """ + "{:.2f}".format(user.weekConsumption[4] - user.weekConsumption[3]) + """ more euro.</li>
-                <li style="margin-top:10px"> You are still below the average. But """ + "{:.2f}".format(user.weekConsumption[4] - bestConsumptionPerWeek[4]) + """€ separate you from the 10% of the customers that consume the less.</li>
-                <li style="margin-top:10px"> The increase since the week 20 represents """ + "{:.2f}".format(user.weekConsumption[4] - user.weekConsumption[0]) + """€</li>
+                <li> You spent <span style="color:red">""" + "{:.1f}".format(user.weekConsumption[4]) + """€</span> this week. """
+
+    differenceLastWeek = user.weekConsumption[4] - user.weekConsumption[3]
+    weatherIconFileName = ""
+    if differenceLastWeek <= -0.5:
+        html += """It is less than the week before. You saved this week <span style="color:red">""" + "{:.1f}".format(-differenceLastWeek) + """€</span>.</li>"""
+        weatherIconFileName = 'resources/img/sunActive.png'
+    if (-0.5 < differenceLastWeek) & (differenceLastWeek <= 0.5):
+        html += """It is the same as the week before. </li>"""
+        weatherIconFileName = 'resources/img/cloudActive.png'
+    if differenceLastWeek > 0.5:
+        html += """It is more than the week before. The rise costs you <span style="color:red">""" + "{:.1f}".format(differenceLastWeek) + """€</span> more.</li>"""
+        weatherIconFileName = 'resources/img/rainyCloudActive.png'
+
+    differenceToAverage = user.weekConsumption[4] - averageConsumptionPerWeek[4]
+    if differenceToAverage <= -0.5:
+        if differenceLastWeek > 0.5:
+            html += """<li>BUT! You are still below the average. And <span style="color:red">""" + "{:.1f}".format(user.weekConsumption[4] - bestConsumptionPerWeek[4]) + """€</span> separate you from the BEST 10% of consumers.</li>"""
+        else:
+            html += """<li>You are still below the average. And <span style="color:red">""" + "{:.1f}".format(user.weekConsumption[4] - bestConsumptionPerWeek[4]) + """€</span> separate you from the BEST 10% of consumers.</li>"""
+    if (-0.5 < differenceToAverage) & (differenceToAverage <= 0.5):
+        html += """<li>Your consumption is on average level. </li>"""
+    if differenceToAverage > 0.5:
+        html += """<li>You are above average. You spend <span style="color:red">""" + "{:.1f}".format(differenceToAverage) + """€</span> more than other consumers.</li>"""
+
+    differenceToWeek20 = user.weekConsumption[4] - user.weekConsumption[0]
+    if differenceToWeek20 <= -0.5:
+        html += """<li>The decrease since the week 20 represents <span style="color:red">""" + "{:.1f}".format(-differenceToWeek20) + """€</span>. That is what you saved! Well done!</li>"""
+    if (-0.5 < differenceToWeek20) & (differenceToWeek20 <= 0.5):
+        html += """<li>Your consumption is on the same level as during the week 20. </li>"""
+    if differenceToWeek20 > 0.5:
+        html += """<li>The increase since the week 20 represents <span style="color:red">""" + "{:.1f}".format(differenceToWeek20) + """€</span>.</li>"""
+
+    html += """
             </ul>
             <div>
-                <img src="cid:rainingCloud" style="margin-left:30px; width: 50px">
-                <img src="cid:greyCloud" style="width: 50px">
-                <img src="cid:sun" style="width: 50px">
+                <img src="cid:weatherIcon" style="margin-left:500px; width: 50px">
             </div>
         </div>
 
-        <div style="float:right; z-index:-1">
-             <img src="cid:week" style="width: 600px">
+        <div style=" z-index:-1">
+             <img src="cid:week" style="width: 90%">
         </div>
 
-        <div style="margin-top: 10px; clear: both; padding: 10px; border: 1px solid black; width: 95%; background-color: lightgrey">
+        <div style="clear: both; padding: 10px; border: 1px solid black; width: 90%; background-color: lightgrey">
             <b> Your average consumption in one day this week</b>
         </div>
 
@@ -259,18 +316,39 @@ for user in users:
              <img src="cid:day" style="width: 100%">
         </div>
 
-        <div style="margin-left: 50px; padding:10px; margin-top: 0px; border: 1px solid black; width: 80%; font-size: 90%; height: 220px">
-            <div style="float: left; width: 50%">
-                <b> How can you reduce your consumption?</b>
+        <div style="clear: both; padding: 10px; border: 1px solid black; width: 90%">
+            <ul>
+                <li> From """ + biggestConsumptionText + """ your consumption was the biggest. </li>
+                <li> You can try to consume less energy during this time and start using it from """ + lowestConsumptionText + """ because energy is cheaper in this time period.</li>
+            </ul>
+        </div>
+
+        <div style="padding:10px; margin-top: 30px; border: 1px solid black; width: 90%; font-size: 90%; height: 220px">
+            <div style="float: left; width: 70%">
+                <b> Are you curious how you can reduce your consumption?</b>
                 <ul>
-                    <li> Use energy-saving light bulbs</li>
-                    <li> Be careful about the standby of your electric devices</li>
-                    <li> Take shower rather than take a bath. This way you will consume on average 70% less hot water.</li>
+                    <li> """ + randomTips[0] + """ </li>
+                    <li> """ + randomTips[1] + """ </li>
+                    <li> """ + randomTips[2] + """ </li>
                 </ul>
             </div>
             <div style="float:right">
                 <img src="cid:lightBulb" style="height: 200px">
             </div>
+        </div>
+
+        <div style="clear: both; margin-top: 30px; padding: 10px; border: 1px solid black; width: 90%">
+            <div> For more information, follow these links <a href="google.de">www.regnitz-utilities.de</a>
+                <img src="cid:facebook" style="margin-left: 10px">
+                <img src="cid:twitter" style="margin-left: 10px">
+                <img src="cid:yt" style="margin-left: 10px">
+                <img src="cid:in" style="margin-left: 10px">
+            </div>
+        </div>
+
+        <div style="clear: both; margin-top: 30px; padding: 10px; border: 1px solid black; width: 90%">
+            <div style="margin-left:200px"> Thank you for participating in this program!</div>
+            <div> We appreciate that you think of spending less energy. You save your money but you also save our planet! Together we can build a better place to live. Because <a href="google.de">People are Power</a>. </div>
         </div>
 
         <div style="clear: both; margin-top: 20px; margin-left: 170px; font-size: 80%">
@@ -299,19 +377,19 @@ for user in users:
         msg.attach(img)
 
     addImage('resources/img/regnitzLogo.png', '<regnitzLogo>')
-    addImage('resources/img/rainingCloud.png', '<rainingCloud>')
-    addImage('resources/img/greyCloud.png', '<greyCloud>')
-    addImage('resources/img/sun.png', '<sun>')
-    addImage('resources/img/' + user.firstName + ' ' + user.lastName + ' average per week.png', '<week>')
-    addImage('resources/img/' + user.firstName + ' ' + user.lastName + ' average in a day.png', '<day>')
-    addImage('resources/img/lightBulb.jpg', '<lightBulb>')
+    addImage(weatherIconFileName, '<weatherIcon>')
+    addImage('resources/img/' + user.id + ' ' + user.firstName + ' ' + user.lastName + ' average per week.png', '<week>')
+    addImage('resources/img/' + user.id + ' ' + user.firstName + ' ' + user.lastName + ' average in a day.png', '<day>')
+    addImage('resources/img/greenbulb.png', '<lightBulb>')
     addImage('resources/img/PAPLogo.png', '<pap>')
+    addImage('resources/img/in.png', '<in>')
+    addImage('resources/img/twitter.png', '<twitter>')
+    addImage('resources/img/yt.png', '<yt>')
+    addImage('resources/img/facebook.png', '<facebook>')
 
-    #part1 = MIMEText(body, 'plain')
-    part2 = MIMEText(html, 'html')
+    emailText = MIMEText(html, 'html')
 
-    #msg.attach(part1)
-    msg.attach(part2)
+    msg.attach(emailText)
 
     #server = smtplib.SMTP('smtp.gmail.com:587')
     server = smtplib.SMTP('mail.uni-bamberg.de')
